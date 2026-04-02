@@ -1,6 +1,7 @@
-name:　Update Trends
+name: Update Trends
 
-on:　workflow_dispatch: # これにより、GitHubの画面から「Run workflow」ボタンが表示されます
+on:
+  workflow_dispatch:
 
 jobs:
   build:
