@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <style>
+        body { background: #000; color: #fff; font-family: 'Helvetica Neue', sans-serif; overflow: hidden; }
+        .container { display: flex; flex-direction: column; height: 100vh; padding: 20px; }
+        .section { flex: 1; border-left: 4px solid #00ffb4; margin-bottom: 20px; padding-left: 20px; }
+        .title { color: #00ffb4; font-size: 1.5rem; text-transform: uppercase; }
+        .rank-item { font-size: 1.2rem; margin: 5px 0; opacity: 0.8; }
+        .insight { background: rgba(0,255,180,0.1); padding: 10px; font-size: 0.9rem; border: 1px solid #00ffb4; }
+    </style>
+</head>
+<body>
+    <div id="app" class="container">読み込み中...</div>
+    <script>
+        fetch('./data.json').then(res => res.json()).then(data => {
+            const app = document.getElementById('app');
+            app.innerHTML = '';
+            
+            // カテゴリごとにループ
+            Object.keys(data.trends).forEach(cid => {
+                const section = document.createElement('div');
+                section.className = 'section';
+                const name = cid === '0' ? 'Overall' : 'Marketing';
+                section.innerHTML = `
+                    <div class="title">${name} Trends</div>
+                    ${data.trends[cid].map((t, i) => `<div class="rank-item">${i+1} ${t}</div>`).join('')}
+                    <div class="insight"><b>Gemini Insight:</b><br>${data.insights[cid]}</div>
+                `;
+                app.appendChild(section);
+            });
+        });
+    </script>
+</body>
+</html>
