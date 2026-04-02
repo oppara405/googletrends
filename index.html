@@ -1,33 +1,41 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+    <meta charset="UTF-8">
     <style>
-        body { background: #000; color: #fff; font-family: 'Helvetica Neue', sans-serif; overflow: hidden; }
-        .container { display: flex; flex-direction: column; height: 100vh; padding: 20px; }
-        .section { flex: 1; border-left: 4px solid #00ffb4; margin-bottom: 20px; padding-left: 20px; }
-        .title { color: #00ffb4; font-size: 1.5rem; text-transform: uppercase; }
-        .rank-item { font-size: 1.2rem; margin: 5px 0; opacity: 0.8; }
-        .insight { background: rgba(0,255,180,0.1); padding: 10px; font-size: 0.9rem; border: 1px solid #00ffb4; }
+        body { background: #050510; color: #fff; font-family: 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 0; }
+        .container { display: flex; flex-direction: column; padding: 15px; box-sizing: border-box; }
+        .header { border-bottom: 1px solid #333; padding-bottom: 8px; margin-bottom: 12px; }
+        .header h1 { font-size: 16px; color: #00ffb4; margin: 0; letter-spacing: 2px; }
+        
+        .section { margin-bottom: 20px; border-left: 3px solid #00ffb4; padding-left: 12px; }
+        .cat-title { font-size: 12px; color: #00ffb4; font-weight: bold; margin-bottom: 8px; text-transform: uppercase; }
+        
+        .rank-list { margin-bottom: 10px; }
+        .rank-item { font-size: 13px; line-height: 1.5; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 2px 0; display: flex; }
+        .rank-item span { color: #00ffb4; font-weight: bold; width: 25px; flex-shrink: 0; }
+        
+        .insight-box { background: rgba(0,255,180,0.07); border: 1px solid rgba(0,255,180,0.3); padding: 10px; font-size: 11px; color: #ccc; line-height: 1.4; white-space: pre-wrap; }
+        .insight-label { color: #00ffb4; font-weight: bold; font-size: 9px; margin-bottom: 4px; display: block; }
     </style>
 </head>
 <body>
-    <div id="app" class="container">読み込み中...</div>
+    <div class="container">
+        <div class="header"><h1>VERTICAL VISION TREND</h1></div>
+        <div id="content">Loading Trends...</div>
+    </div>
     <script>
-        fetch('./data.json').then(res => res.json()).then(data => {
-            const app = document.getElementById('app');
-            app.innerHTML = '';
+        fetch('./data.json?t=' + Date.now()).then(res => res.json()).then(data => {
+            const content = document.getElementById('content');
+            content.innerHTML = '';
             
-            // カテゴリごとにループ
-            Object.keys(data.trends).forEach(cid => {
+            const cats = [{id: "0", name: "Overall Trends"}, {id: "25", name: "Advertising & Marketing"}];
+            cats.forEach(cat => {
                 const section = document.createElement('div');
                 section.className = 'section';
-                const name = cid === '0' ? 'Overall' : 'Marketing';
-                section.innerHTML = `
-                    <div class="title">${name} Trends</div>
-                    ${data.trends[cid].map((t, i) => `<div class="rank-item">${i+1} ${t}</div>`).join('')}
-                    <div class="insight"><b>Gemini Insight:</b><br>${data.insights[cid]}</div>
-                `;
-                app.appendChild(section);
+                const items = data.trends[cat.id].map((t, i) => `<div class="rank-item"><span>${i+1}</span>${t}</div>`).join('');
+                section.innerHTML = `<div class="cat-title">${cat.name}</div><div class="rank-list">${items}</div><div class="insight-box"><span class="insight-label">GEMINI AI INSIGHT</span>${data.insights[cat.id]}</div>`;
+                content.appendChild(section);
             });
         });
     </script>
