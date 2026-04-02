@@ -15,9 +15,11 @@ jobs:
         with:
           python-version: '3.x'
 
+# ...（上の部分は同じ）
       - name: Install dependencies
         run: |
-          pip install pytrends google-generativeai
+          pip install pytrends google-genai  # google-generativeai から変更
+# ...（下の部分は同じ）
 
       - name: Run script
         env:
